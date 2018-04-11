@@ -1,0 +1,23 @@
+{
+  "name": "proj",
+  "version": "1.0.0",
+  "description": "a project of react & typeScript",
+  "main": "app.js",
+  "scripts": {
+    "build": "webpack"
+  },
+  "author": "wjw",
+  "license": "ISC",
+  "dependencies": {
+    "@types/react": "^16.3.8",
+    "@types/react-dom": "^16.0.5",
+    "react": "^16.3.1",
+    "react-dom": "^16.3.1"
+  },
+  "devDependencies": {
+    "ts-loader": "^2.3.7",
+    "source-map-loader": "^0.2.3",
+    "typescript": "^2.8.1",
+    "webpack": "^3.11.0"
+  }
+}
