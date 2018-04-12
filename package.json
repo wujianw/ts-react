@@ -4,20 +4,31 @@
   "description": "a project of react & typeScript",
   "main": "app.js",
   "scripts": {
-    "build": "webpack"
+    "dev": "node build/dev-server.js"
   },
   "author": "wjw",
   "license": "ISC",
   "dependencies": {
-    "@types/react": "^16.3.8",
-    "@types/react-dom": "^16.0.5",
+    "eventsource-polyfill": "^0.9.6",
     "react": "^16.3.1",
     "react-dom": "^16.3.1"
   },
   "devDependencies": {
-    "ts-loader": "^2.3.7",
+    "@types/react": "^16.3.8",
+    "@types/react-dom": "^16.0.5",
+    "friendly-errors-webpack-plugin": "^1.7.0",
+    "html-webpack-plugin": "^2.28.0",
+    "koa": "^2.2.0",
+    "koa-connect-history-api-fallback": "^0.3.1",
+    "koa-http-proxy-middleware": "^0.0.2",
+    "koa-static": "^4.0.2",
+    "koa-webpack-middleware": "^1.0.7",
+    "opn": "^5.3.0",
     "source-map-loader": "^0.2.3",
+    "ts-loader": "^2.3.7",
     "typescript": "^2.8.1",
-    "webpack": "^3.11.0"
+    "webpack": "^3.11.0",
+    "webpack-hot-middleware": "^2.22.0",
+    "webpack-merge": "^4.1.0"
   }
 }
