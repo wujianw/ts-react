@@ -5,38 +5,22 @@ const config = require('../config')
 const opn = require('opn')
 const {proxyMiddleware} = require('koa-http-proxy-middleware')
 const webpackConfig = require('./webpack.dev.conf')
-const { devMiddleware } = require('koa-webpack-middleware')
+const { hotMiddleware,devMiddleware } = require('./middleware')
 
 const port = process.env.PORT || config.dev.port
+
 const proxyTable = config.dev.proxyTable
 
 let app = new Koa()
-let compiler = webpack(webpackConfig)
-const webpackHot = require('webpack-hot-middleware')
-const PassThrough = require('stream').PassThrough;
-const hotMiddleware = (compiler, opts) => {
-    const middleware = webpackHot(compiler, opts);
-    const publish = middleware.publish
-    const fun = async (ctx, next) => {
-        let stream = new PassThrough()
-        ctx.body = stream
-        await middleware(ctx.req, {
-            write: stream.write.bind(stream),
-            writeHead: (status, headers) => {
-                ctx.status = status
-                ctx.set(headers)
-            }
-        }, next)
-    }
-    fun.publish = publish
-    return fun
 
-}
+let compiler = webpack(webpackConfig)
+
 let _hotMiddleware = hotMiddleware(compiler, {
     log: () => {},
     path: '/__webpack_hmr'
 })
-// force page reload when html-webpack-plugin template changes
+
+// 编辑html文件后 刷新页面
 compiler.plugin('compilation', function (compilation) {
   compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
       _hotMiddleware.publish({ action: 'reload' })
@@ -44,7 +28,7 @@ compiler.plugin('compilation', function (compilation) {
   })
 })
 
-// proxy api requests
+// 处理代理接口 转发
 Object.keys(proxyTable).forEach(function (context) {
   var options = proxyTable[context]
   if (typeof options === 'string') {
@@ -53,34 +37,33 @@ Object.keys(proxyTable).forEach(function (context) {
   app.use(proxyMiddleware(context, options))
 })
 
-// handle fallback for HTML5 history API
+// 使用 HTML5 history API  *一般这个用不上
 app.use(require('koa-connect-history-api-fallback')())
 
-// serve webpack bundle output
+// webpack编译中间件
 app.use(devMiddleware(compiler, {
     publicPath: webpackConfig.output.publicPath,
-    quiet : true,
-    open: config.dev.autoOpenBrowser,
+    quiet : true,// 关闭编译日志
     stats: {
         colors: true,
         chunks: false
     }
 }))
 
-// enable hot-reload and state-preserving
-// compilation error display
+// 热更新中间件
 app.use(_hotMiddleware)
 
-// serve pure static assets
+// 静态文件处理
 let staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
 app.use(require('koa-static')('./static', staticPath))
 
+// 启动koa 本地开发服务器
 module.exports = app.listen(port, function (err) {
   if (err) {
     console.log('err',err)
     return
   }
-  var uri = 'http://localhost:' + port
+  let uri = 'http://localhost:' + port
   console.log('Listening at ' + uri + '\n')
   opn(uri)
 })
