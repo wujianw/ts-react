@@ -12,17 +12,8 @@ const proxyTable = config.dev.proxyTable
 
 let app = new Koa()
 let compiler = webpack(webpackConfig)
-
-
-
-
-
-// force page reload when html-webpack-plugin template changes
-
-
 const webpackHot = require('webpack-hot-middleware')
 const PassThrough = require('stream').PassThrough;
-
 const hotMiddleware = (compiler, opts) => {
     const middleware = webpackHot(compiler, opts);
     const publish = middleware.publish
@@ -42,8 +33,10 @@ const hotMiddleware = (compiler, opts) => {
 
 }
 let _hotMiddleware = hotMiddleware(compiler, {
-    log: () => {}
+    log: () => {},
+    path: '/__webpack_hmr'
 })
+// force page reload when html-webpack-plugin template changes
 compiler.plugin('compilation', function (compilation) {
   compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
       _hotMiddleware.publish({ action: 'reload' })
@@ -66,6 +59,8 @@ app.use(require('koa-connect-history-api-fallback')())
 // serve webpack bundle output
 app.use(devMiddleware(compiler, {
     publicPath: webpackConfig.output.publicPath,
+    quiet : true,
+    open: config.dev.autoOpenBrowser,
     stats: {
         colors: true,
         chunks: false
@@ -82,7 +77,7 @@ app.use(require('koa-static')('./static', staticPath))
 
 module.exports = app.listen(port, function (err) {
   if (err) {
-    console.log(err)
+    console.log('err',err)
     return
   }
   var uri = 'http://localhost:' + port

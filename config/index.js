@@ -16,6 +16,7 @@ module.exports = {
         port: 8080,
         assetsSubDirectory: 'static',
         assetsPublicPath: '/',
+        autoOpenBrowser:false,
         proxyTable: {
             // '/api': {
             //   // target: 'http://wx.ttj315.com/',
