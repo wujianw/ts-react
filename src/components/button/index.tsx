@@ -1,10 +1,9 @@
-import * as React from 'react'
-import { MouseEvent, ReactNode } from 'react'
-type Props = { 
- onClick(e: MouseEvent<HTMLElement>): void
- children?: ReactNode 
-}
+import React, { MouseEvent, SFC } from 'react'
 
-const Button = ({ onClick: handleClick, children }: Props) => (
-  <button onClick={handleClick}>{children}</button>
+type Props = { onClick(e: MouseEvent<HTMLElement>): void }
+
+const Button: SFC<Props> = ({ onClick: handleClick, children }) => (
+    <button onClick={handleClick}>文字{children}</button>
 )
+
+export default Button

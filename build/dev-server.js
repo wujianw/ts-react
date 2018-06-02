@@ -4,66 +4,80 @@ const webpack = require('webpack')
 const config = require('../config')
 const opn = require('opn')
 const {proxyMiddleware} = require('koa-http-proxy-middleware')
-const webpackConfig = require('./webpack.dev.conf')
+const devWebpackConfig = require('./webpack.dev.conf')
 const { hotMiddleware,devMiddleware } = require('./middleware')
+const portfinder = require('portfinder')
+const utils = require('./utils')
+const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 
-const port = process.env.PORT || config.dev.port
 
-const proxyTable = config.dev.proxyTable
 
-let app = new Koa()
 
-let compiler = webpack(webpackConfig)
+const promise = new Promise((resolve, reject) => {
+    portfinder.basePort = process.env.PORT || config.dev.port
+    portfinder.getPort((err, port) => {
+        if (err) {
+            reject(err)
+        } else {
+            process.env.PORT = port
+            devWebpackConfig.plugins.push(new FriendlyErrorsPlugin({
+                compilationSuccessInfo: {
+                    messages: [`Your application is running here: http://${devWebpackConfig.devServer.host}:${port}`],
+                },
+                onErrors: config.dev.notifyOnErrors
+                    ? utils.createNotifierCallback()
+                    : undefined
+            }))
 
-let _hotMiddleware = hotMiddleware(compiler, {
-    log: () => {},
-    path: '/__webpack_hmr'
-})
+            let compiler = webpack(devWebpackConfig)
 
-// 编辑html文件后 刷新页面
-compiler.plugin('compilation', function (compilation) {
-  compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
-      _hotMiddleware.publish({ action: 'reload' })
-    cb()
-  })
-})
+            let entityHotMiddleware = hotMiddleware(compiler, {
+                log: () => {},
+                path: '/__webpack_hmr'
+            })
 
-// 处理代理接口 转发
-Object.keys(proxyTable).forEach(function (context) {
-  var options = proxyTable[context]
-  if (typeof options === 'string') {
-    options = { target: options }
-  }
-  app.use(proxyMiddleware(context, options))
-})
+            // 编辑html文件后 刷新页面
+            compiler.plugin('compilation', function (compilation) {
+                compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
+                    entityHotMiddleware.publish({ action: 'reload' })
+                    cb()
+                })
+            })
 
-// 使用 HTML5 history API  *一般这个用不上
-app.use(require('koa-connect-history-api-fallback')())
+            const proxyTable = config.dev.proxyTable
+            let app = new Koa()
 
-// webpack编译中间件
-app.use(devMiddleware(compiler, {
-    publicPath: webpackConfig.output.publicPath,
-    quiet : true,// 关闭编译日志
-    stats: {
-        colors: true,
-        chunks: false
-    }
-}))
+            // 使用 HTML5 history API  *一般这个用不上
+            app.use(require('koa-connect-history-api-fallback')())
 
-// 热更新中间件
-app.use(_hotMiddleware)
+            // webpack编译中间件
+            app.use(devMiddleware(compiler, devWebpackConfig.devServer))
 
-// 静态文件处理
-let staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
-app.use(require('koa-static')('./static', staticPath))
+            // 热更新中间件
+            app.use(entityHotMiddleware)
 
-// 启动koa 本地开发服务器
-module.exports = app.listen(port, function (err) {
-  if (err) {
-    console.log('err',err)
-    return
-  }
-  let uri = 'http://localhost:' + port
-  console.log('Listening at ' + uri + '\n')
-  opn(uri)
+            // 静态文件处理
+            let staticPath = path.posix.join(config.dev.assetsPublicPath, config.dev.assetsSubDirectory)
+            app.use(require('koa-static')('./static', staticPath))
+
+            // 处理代理接口 转发
+            Object.keys(proxyTable).forEach(function (context) {
+                let options = proxyTable[context]
+                if (typeof options === 'string') {
+                    options = { target: options }
+                }
+                app.use(proxyMiddleware(context, options))
+            })
+
+            app.listen(port,devWebpackConfig.devServer.host,function(err){
+                if(err){
+                    console.log('err',err)
+                    return
+                }
+                if(devWebpackConfig.devServer.open){
+                    opn(`http://${devWebpackConfig.devServer.host}:${port}`)
+                }
+            })
+        }
+    })
 })

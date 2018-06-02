@@ -1,4 +1,9 @@
-var config = require('../config')
+const path = require('path');
+const config = require('../config');
+const utils = require('./utils');
+function resolve (dir) {
+    return path.join(__dirname, '..', dir)
+}
 module.exports = {
     entry: {
         app: './src/index.tsx',
@@ -13,15 +18,25 @@ module.exports = {
     devtool: "source-map",
     resolve: {
         // Add '.ts' and '.tsx' as resolvable extensions.
-        extensions: [".ts", ".tsx", ".js", ".json"]
+        extensions: [".ts", ".tsx", ".js", ".json"],
+        alias: {
+            '@': resolve('src'),
+        }
     },
     module: {
         rules: [
-            // All files with a '.ts' or '.tsx' extension will be handled by 'awesome-typescript-loader'.
             { test: /\.tsx?$/, loader: "ts-loader" },
 
-            // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
-            { enforce: "pre", test: /\.js$/, loader: "source-map-loader" }
+            { enforce: "pre", test: /\.js$/, loader: "source-map-loader" },
+
+            {
+                test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+                loader: 'url-loader',
+                options: {
+                    limit: 10000,
+                    name: utils.assetsPath('img/[name].[hash:7].[ext]')
+                }
+            },
         ]
     },
     node: {
@@ -31,10 +46,8 @@ module.exports = {
         tls: 'empty',
         child_process: 'empty',
     },
-    // Turn off performance hints during development because we don't do any
-    // splitting or minification in interest of speed. These warnings become
-    // cumbersome.
+
     performance: {
-        hints: false,
+        hints: false, //  关闭性能提示
     }
 };
